@@ -139,7 +139,13 @@ def run(solver, in_file: str, out_file: str, overwrite: bool=False):
     output = solver(instance)
     if output:
         instance = output
-    write_output(instance, out_file, overwrite)
+    if overwrite or not os.path.exists(Path(out_file)):        #
+        write_output(instance, out_file, overwrite)
+    elif score(read_output(read_input(in_file), out_file)) > score(instance): #
+        print("overwriting because current score is", score(read_output(read_input(in_file), out_file))) 
+        write_output(instance, out_file, overwrite=True)       #
+    else:
+        print("not overwriting because current score is", score(read_output(read_input(in_file), out_file)))
     print(f"{str(in_file)}: cost", score(instance))
 
 
