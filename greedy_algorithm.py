@@ -1,4 +1,5 @@
 from starter import *
+import random
 
 def optimize_k(G: nx.Graph):
     """Searches for the optimal k for a given graph G."""
@@ -104,7 +105,9 @@ def max_k_cut_solve(k):
     teams = [[] for _ in range(k)]
     not_in_teams = [[] for _ in range(k)]
     def max_k_cut_helper(G: nx.Graph):
-        for v in G.nodes:
+        list_of_nodes = list(G.nodes)
+        random.shuffle(list_of_nodes)
+        for v in list_of_nodes:
             i = potential_change_cut(G, teams, not_in_teams, v)
             teams[i].append(v)
             for j in range(len(not_in_teams)):
