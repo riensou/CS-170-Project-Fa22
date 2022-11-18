@@ -1,9 +1,10 @@
 from starter import *
 
-def optimize_k(G: nx.Graph):
+def optimize_k(G: nx.Graph, binary_search=False):
     """Searches for the optimal k for a given graph G."""
 
     # TODO: Save time by finding k by with binary search, instead of incrementing it up by 1 each time
+    # TODO: Clean up this code
 
     G_copy = G.copy()
 
@@ -11,25 +12,157 @@ def optimize_k(G: nx.Graph):
     max_k_cut_solve(k)(G_copy)
     validate_output(G_copy)
     minimum_score = score(G_copy)
+    second_minimum_score = minimum_score
     best_k = 2
+    second_best_k = best_k
+    best_G = G_copy
     #print("Score:", minimum_score, "k:", k)
 
-    increase_k = True
+    if binary_search:
 
-    while increase_k:
-        G_copy = G.copy()
-        k += 1
-        max_k_cut_solve(k)(G_copy)
-        validate_output(G_copy)
-        current_score = score(G_copy)
-        #print("Score:", current_score, "k:", k)
-        if current_score < minimum_score:
-            best_k = k
-            minimum_score = current_score
-        else:
-            increase_k = False
-    
-    return best_k
+        found_optimal_k = False
+        binary_search_phase = True
+        final_phase = False
+        search_space = -1
+
+        while not found_optimal_k:
+            if binary_search_phase:
+                G_copy = G.copy()
+                k *= 2
+                max_k_cut_solve(k)(G_copy)
+                current_score = score(G_copy)
+                print("Score:", current_score, "k:", k)
+                if current_score < minimum_score:
+                    second_best_k = best_k
+                    second_minimum_score = minimum_score
+                    best_k = k
+                    best_G = G_copy
+                    minimum_score = current_score
+                else:
+                    binary_search_phase = False
+                    k = second_best_k
+                    #search_space = k - best_k
+                    #second_best_k = best_k
+                    #k = best_k
+                    #final_phase_k = k
+            else:
+                G_copy = G.copy()
+                k += 1
+                if k == best_k:
+                    continue
+                max_k_cut_solve(k)(G_copy)
+                current_score = score(G_copy)
+                print("Score:", current_score, "k:", k)
+                if current_score < minimum_score:
+                    best_k = k
+                    best_G = G_copy
+                    second_minimum_score = current_score
+                    minimum_score = current_score
+                elif current_score < second_minimum_score:
+                    second_minimum_score = current_score
+                else:
+                    found_optimal_k = True
+
+
+                # G_copy = G.copy()
+                # k += int(search_space / 2)
+                # if k == final_phase_k:
+                #     break
+                # elif k == best_k:
+                #     search_space = best_k - second_best_k
+                #     k = second_best_k
+                #     k += int(search_space / 2)
+                #     final_phase = True
+                # print(search_space)
+                # max_k_cut_solve(k)(G_copy)
+                # validate_output(G_copy)
+                # current_score = score(G_copy)
+                # print("Score:", current_score, "k:", k)
+                # if current_score < minimum_score:
+                #     second_best_k = best_k
+                #     best_k = k
+                #     best_G = G_copy
+                #     minimum_score = current_score
+                #     search_space = int(search_space/2)
+                # elif search_space > 0:
+                #     search_space = k - best_k
+                #     k = best_k
+
+
+        return best_k, best_G
+
+        # found_optimal_k = False
+        # continue_binary_search = True
+        # find_direction = False
+        # search_space = -1
+        # direction = 1
+
+        # while not found_optimal_k:
+        #     if continue_binary_search:
+        #         k *= 2
+        #     else:
+        #         if find_direction and search_space >= 8:
+        #             G1_copy = G.copy()
+        #             G2_copy = G.copy()
+        #             max_k_cut_solve(k + 1 + int(search_space / 2))(G1_copy)
+        #             max_k_cut_solve(k - 1 + int(search_space / 2))(G2_copy)
+        #             up_score = score(G1_copy)
+        #             down_score = score(G2_copy)
+        #             print("searching direction:", up_score, down_score)
+        #             if up_score > down_score:
+        #                 direction = 1
+        #                 current_score = up_score
+        #             else:
+        #                 direction = -1
+        #                 current_score = down_score
+        #             find_direction = False
+        #         k += int(search_space / 2) * direction
+        
+        #     G_copy = G.copy()
+
+        #     if search_space == 0:
+        #         break
+        #     max_k_cut_solve(k)(G_copy)
+        #     current_score = score(G_copy)
+        #     print("Score:", current_score, "k:", k)
+        #     if current_score < minimum_score:
+        #         best_k = k
+        #         best_G = G_copy
+        #         minimum_score = current_score
+        #         search_space = search_space / 2
+        #     else:
+        #         if continue_binary_search:
+        #             search_space = k - best_k
+        #             k = best_k
+        #             continue_binary_search = False
+        #             find_direction = True
+        #         elif search_space > 0:
+        #             search_space = k - best_k
+        #             k = best_k
+        #             find_direction = True
+        #         else:
+        #             found_optimal_k = True
+            
+        # return best_k, best_G
+    else:
+        increase_k = True
+        while increase_k:
+            G_copy = G.copy()
+            k += 1
+            max_k_cut_solve(k)(G_copy)
+            validate_output(G_copy)
+            current_score = score(G_copy)
+            #print("Score:", current_score, "k:", k)
+            if current_score < minimum_score:
+                best_k = k
+                best_G = G_copy
+                minimum_score = current_score
+            else:
+                increase_k = False
+        
+        print(best_k)
+
+        return best_k
 
 # Below are 2 approached to the greedy algorithm:
 # max_k_cut_solve maximizes the weights of the edges between cuts at each step

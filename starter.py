@@ -142,7 +142,7 @@ def run(solver, in_file: str, out_file: str, overwrite: bool=False):
     if overwrite or not os.path.exists(Path(out_file)):        #
         write_output(instance, out_file, overwrite)
     elif score(read_output(read_input(in_file), out_file)) > score(instance): #
-        print("overwriting because current score is", score(read_output(read_input(in_file), out_file))) 
+        #print("overwriting because current score is", score(read_output(read_input(in_file), out_file))) 
         write_output(instance, out_file, overwrite=True)       #
     else:
         print("not overwriting because current score is", score(read_output(read_input(in_file), out_file)))
