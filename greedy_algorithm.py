@@ -9,7 +9,6 @@ def optimize_k(G: nx.Graph):
     else:
         quick_search = 0
 
-    # TODO: Save time by finding k by with binary search, instead of incrementing it up by 1 each time
     # TODO: Clean up this code
 
     G_copy = G.copy()
@@ -18,11 +17,9 @@ def optimize_k(G: nx.Graph):
     max_k_cut_solve(k)(G_copy)
     validate_output(G_copy)
     minimum_score = score(G_copy)
-    second_minimum_score = minimum_score
     best_k = 2
     second_best_k = best_k
     best_G = G_copy
-    #print("Score:", minimum_score, "k:", k)
 
     if quick_search:
         increase_k = True
@@ -31,7 +28,6 @@ def optimize_k(G: nx.Graph):
             k += quick_search
             max_k_cut_solve(k)(G_copy)
             current_score = score(G_copy)
-            #print("Score:", current_score, "k:", k)
             if current_score < minimum_score:
                 second_best_k = best_k
                 best_k = k
@@ -53,25 +49,12 @@ def optimize_k(G: nx.Graph):
                 continue
             max_k_cut_solve(k + i)(G_copy)
             current_score = score(G_copy)
-            #print("Score:", current_score, "k:", k + i)
             if current_score < minimum_score:
                 best_k = k + i
                 best_G = G_copy
                 minimum_score = current_score
                 break
 
-        # while increase_k:
-        #     G_copy = G.copy()
-        #     k += 1
-        #     if k == best_k:
-        #         continue
-        #     max_k_cut_solve(k)(G_copy)
-        #     current_score = score(G_copy)
-        #     print("Score:", current_score, "k:", k)
-        #     if current_score < minimum_score:
-        #         best_k = k
-        #         best_G = G_copy
-        #         minimum_score = current_score
 
     else:
         increase_k = True
@@ -80,7 +63,6 @@ def optimize_k(G: nx.Graph):
             k += 1
             max_k_cut_solve(k)(G_copy)
             current_score = score(G_copy)
-            #print("Score:", current_score, "k:", k)
             if current_score < minimum_score:
                 best_k = k
                 best_G = G_copy
@@ -88,15 +70,13 @@ def optimize_k(G: nx.Graph):
             else:
                 increase_k = False
 
-
-    # weight = sum(d for u, v, d in G.edges(data='weight'))
-    # print("number of nodes:", G.number_of_nodes(), "\nnumber of edges:", G.number_of_edges(), "\nweight of edges:", weight, "\nk:", best_k)
-
     return best_k
 
+
 # Below are 2 approached to the greedy algorithm:
-# max_k_cut_solve maximizes the weights of the edges between cuts at each step
-# min_k_partition_solve minimizes the weights within each partition at each step
+
+# 1. max_k_cut_solve maximizes the weights of the edges between cuts at each step
+# 2. min_k_partition_solve minimizes the weights within each partition at each step
 
 # Based on a couple of trials, it seems as if the two approaches are identical, however, it needs more testing
 
