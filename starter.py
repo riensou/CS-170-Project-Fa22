@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import math
 from pathlib import Path
-#from tqdm.auto import tqdm
+from tqdm.auto import tqdm
 import tarfile
 
 # Scoring constants
@@ -151,9 +151,7 @@ def run(solver, in_file: str, out_file: str, overwrite: bool=False):
 
 
 def run_all(solver, in_dir, out_dir, overwrite: bool=False):
-    #for file in tqdm([x for x in os.listdir(in_dir) if x.endswith('.in')]):
-    #    run(solver, str(Path(in_dir) / file), str(Path(out_dir) / f"{file[:-len('.in')]}.out"), overwrite)
-    for file in [x for x in os.listdir(in_dir) if x.endswith('.in')]:
+    for file in tqdm([x for x in os.listdir(in_dir) if x.endswith('.in')]):
         run(solver, str(Path(in_dir) / file), str(Path(out_dir) / f"{file[:-len('.in')]}.out"), overwrite)
 
 
