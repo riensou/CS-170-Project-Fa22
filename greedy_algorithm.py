@@ -9,9 +9,9 @@ def greedy_algorithm(G: nx.Graph):
     # Randomly chunk the vertices into groups, R, then run the algorithm (this might be really slow?)
 
     for R in list_of_groupings:
+        best_team_for_R = minimize_score(G, V, R)
         for v in R:
             V.append(v)
-        best_team_for_R = minimize_score(G, V, R)
         for i in range(len(R)):
             G.nodes[R[i]]['team'] = best_team_for_R[i]
 
@@ -21,7 +21,7 @@ def random_groupings(list_in):
     groupings = []
     i = 0
     while list_in:
-        next_list_size = random.randint(1, 50)
+        next_list_size = random.randint(1, 3)
         end_point = min(i + next_list_size, n)
         groupings.append(list_in[i:end_point])
         list_in = list_in[end_point:]
@@ -54,7 +54,7 @@ def minimize_score(G: nx.Graph, V, R):
     """
     Inputs:
     G is a copy of the graph currently being approximated.
-    V is the set of vertices that have already been set, including R which is about to be set.
+    V is the set of vertices that have already been set, not including R which is about to be set.
     R is the set of vertices that are about to be added to the set
     
     Outputs:
@@ -73,11 +73,20 @@ def minimize_score(G: nx.Graph, V, R):
         current_team = []
         G_copy = G.copy()
         for v in R:
-            # Instead of randomly adding here, greedily add solely based on edge weights
-            v_team = random.randint(1, max_team)
+            G_copy_copy = G_copy.copy()
+            lowest_score = float('inf')
+            v_best_team = -1
+            for team in range(max_team):
+                G_copy_copy.nodes[v]['team'] = team + 1
+                current_score = partial_score(G_copy_copy, V + [v])
+                if current_score < lowest_score:
+                    lowest_score = current_score
+                    v_best_team = team
+            #v_team = random.randint(1, max_team)
+            v_team = v_best_team
             current_team.append(v_team)
             G_copy.nodes[v]['team'] = v_team
-        current_score = partial_score(G_copy, V)
+        current_score = partial_score(G_copy, V + R)
         if current_score < minimum_score:
             minimum_score = current_score
             best_team = current_team
