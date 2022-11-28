@@ -9,7 +9,7 @@ from starter import *
 in_dir = "inputs"
 out_dir = "outputs"
 
-def simulated_annealing(file, overwrite=False):
+def simulated_annealing(file, overwrite=True):
 
     start_t = time.perf_counter()
 
