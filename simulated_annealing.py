@@ -21,7 +21,8 @@ def simulated_annealing(file, overwrite=True):
     G = read_output(read_input(in_file), out_file)
 
     # Implement efficient simulated annealing algorithm
-    for _ in range(10):
+    change = list(G.nodes)
+    for _ in range(30):
         output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
         teams, counts = np.unique(output, return_counts=True)
         k = np.max(teams)
@@ -29,7 +30,7 @@ def simulated_annealing(file, overwrite=True):
         for i in G.nodes:
             C[i] = sum(d for u, v, d in G.edges(data='weight') if output[u] == output[v] and u == i)
 
-        most_impact = max(G.nodes, key=lambda x: C[x])
+        most_impact = max(change, key=lambda x: C[x])
 
         G.nodes[most_impact]['team'] = random.randint(1, k)
 
@@ -38,6 +39,7 @@ def simulated_annealing(file, overwrite=True):
         if best_score > current_score:
             best_score = current_score
         else:
+            change.remove(most_impact)
             G.nodes[most_impact]['team'] = output[most_impact]
     # Implement efficient simulated annealing algorithm
 
