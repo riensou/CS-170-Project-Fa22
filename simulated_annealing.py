@@ -114,6 +114,80 @@ def O5_operator(G: nx.Graph):
     # TODO
     pass
 
+def MOH_algorithm(file, overwrite=True):
+
+    start_t = time.perf_counter()
+
+    # Read in the file, and record the initial score
+    in_file = str(Path(in_dir) / file)
+    out_file = str(Path(out_dir) / f"{file[:-len('.in')]}.out")
+
+    I = read_output(read_input(in_file), out_file)
+    initial_score = score(I)
+    #
+
+
+    ### MOH algorithm ###
+
+    I_best = I.copy() 
+    local_optimum_score = initial_score
+    best_score = initial_score
+    c_non_impv = 0
+    iter = 0
+
+    # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
+        
+        ## Descent-based improvement phase (O1 and O2) ##
+        # while I can be improved by O1 and O2
+
+            # while O1 improves I
+                # do O1 and update bucket data structure (what is this? read the paper)
+                # iter += 1
+
+            # while O2 improves I
+                # do O2 and update bucket data structure (what is this? read the paper)
+                # iter += 1
+        ##
+        
+        # current_score = score(I)
+        # local_optimum_score = current_score
+        # if current_score < best_score
+            # best_score = current_score
+            # I_best = I.copy()
+            # c_non_impv = 0
+        # else
+            # c_non_impv += 1
+
+        ## Diversified improvement phase (O3 and O4) ##
+        # c_div = 0
+
+        # while c_div <= lower_omega and score(I) > local_optimum_score
+
+            # if random(0, 1) < lower_rho:
+                # apply O3 on I
+            # else:
+                # apply O4 on I
+            # Update bucket data structure and H
+            # iter += 1
+            # c_div += 1
+        ##
+
+        ## Perturbation phase (O5) ##
+        # if c_non_impv > lower_xi
+            # apply O5 (gamma times)
+            # c_non_impv
+        ##
+
+    ###
+    
+    # Write the new file if it is better than the initial score
+    if overwrite and initial_score > best_score:
+        write_output(I_best, out_file, overwrite=True)
+    #
+
+    end_t = time.perf_counter()
+
+    return in_file, initial_score - best_score, end_t - start_t
 
 
 if __name__ == '__main__':
