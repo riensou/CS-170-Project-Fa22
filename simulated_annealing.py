@@ -5,6 +5,106 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 from starter import *
 
+def helper(output_1, output_2, team):
+    """
+    Helps with figuring out C_w_partial
+    """
+    if team == output_2:
+        return 1
+    elif output_1 == output_2:
+        return -1
+    else:
+        return 0
+class Bucket_Structure():
+
+    def __init__(self, G):
+
+        self.G = G
+
+        output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
+        teams, counts = np.unique(output, return_counts=True)
+
+        self.k = np.max(teams)
+
+        b = (counts / G.number_of_nodes()) - 1 / self.k
+        b_norm = np.linalg.norm(b, 2)
+        n = G.number_of_nodes()
+
+        self.buckets = [{} for _ in range(self.k)]
+        self.vertices_key = [{} for _ in range(G.number_of_nodes())] 
+
+        C_team_size = [[None for _ in range(self.k)] for _ in range(self.k)]
+        for v in G.nodes:
+            for team in range(self.k):
+                if G.nodes[v]['team'] == team + 1:
+                    continue
+
+                # calculate move gain of moving v to team (use HW11)
+                C_w_partial = sum(d * helper(output[i], output[j], team) for i, j, d in G.edges(v, data='weight') if i == v) # i should always equal v anyway
+
+                if not C_team_size[output[v] - 1][team - 1]: # if we haven't yet calculated the change from moving something in team a to team b, use the formula from HW 11
+                    C_team_size[output[v] - 1][team - 1] = math.exp(B_EXP * np.sqrt(b_norm ** 2 - b[output[v] - 1] ** 2 - b[team - 1] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team - 1] + 1 / n) ** 2))
+
+                gain = C_w_partial + C_team_size[output[v] - 1][team - 1]
+
+                if gain in self.buckets[team]:
+                    self.buckets[team][gain].append(v)
+                else:
+                    self.buckets[team][gain] = [v]
+
+                self.vertices_key[v][team] = gain # are vertices zero-indexed?
+                    # n dictionaries where each dictionary has k keys (1, k), the values of the dict the gains
+
+    def update(self, move):
+        # I think we should store a move as a pair: (v, S) the changed node and the set it's going to
+
+        self.G.nodes[move[0]]['team'] = move[1]
+
+        output = [self.G.nodes[v]['team'] for v in range(self.G.number_of_nodes())]
+        teams, counts = np.unique(output, return_counts=True)
+
+        b = (counts / self.G.number_of_nodes()) - 1 / self.k
+        b_norm = np.linalg.norm(b, 2)
+        n = len(self.G.nodes)
+
+        C_team_size = [[None for _ in range(self.k)] for _ in range(self.k)]
+
+        # create a list of nodes that need to be changed
+        # this list consists of the node that was moved, and the nodes that it was connected to
+
+        change_nodes = [move[0]]
+        for i, j, d in self.G.nodes(move[0], data='weight'):
+            if i == move[0] and d > 0:
+                change_nodes.append(j)
+
+        # figure out which stuff needs to get deleted.
+        # for v in change_nodes:
+        #     for team in range(self.k):
+        #         self.buckets[]
+
+        for v in change_nodes:
+            for team in range(self.k):
+                if self.G.nodes[v]['team'] == team + 1:
+                    continue
+
+                # calculate move gain of moving v to team (use HW11)
+                C_w_partial = sum(d * helper(output[i], output[j], team) for i, j, d in self.G.edges(v, data='weight') if i == v) # i should always equal v anyway
+
+                if not C_team_size[output[v] - 1][team - 1]: # if we haven't yet calculated the change from moving something in team a to team b, use the formula from HW 11
+                    C_team_size[output[v] - 1][team - 1] = math.exp(B_EXP * np.sqrt(b_norm ** 2 - b[output[v] - 1] ** 2 - b[team - 1] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team - 1] + 1 / n) ** 2))
+
+                gain = C_w_partial + C_team_size[output[v] - 1][team - 1]
+
+                if gain in self.buckets[team]:
+                    self.buckets[team][gain].append(v)
+                else:
+                    self.buckets[team][gain] = [v]
+
+                self.vertices_key[v][team] = gain # are vertices zero-indexed?
+                    # n dictionaries where each dictionary has k keys (1, k), the values of the dict the gains
+
+        pass
+
 
 in_dir = "inputs"
 out_dir = "outputs"
