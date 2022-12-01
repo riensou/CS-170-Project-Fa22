@@ -9,8 +9,6 @@ def optimize_k(G: nx.Graph):
     else:
         quick_search = 0
 
-    # TODO: Clean up this code
-
     G_copy = G.copy()
 
     k = 2

@@ -6,8 +6,6 @@ def greedy_algorithm(G: nx.Graph):
     list_of_vertices = list(G.nodes)
     list_of_groupings = random_groupings(list_of_vertices)
 
-    # Randomly chunk the vertices into groups, R, then run the algorithm (this might be really slow?)
-
     for R in tqdm(list_of_groupings):
         best_team_for_R = minimize_score(G, V, R)
         for v in R:
@@ -106,8 +104,6 @@ def minimize_score(G: nx.Graph, V, R):
         k = max(2, np.max(teams))
     else:
         k = 2
-
-    # test if k is updating correctly ... (this should be speeding it up maybe, because less stuff needs to be searched as k increases)
 
     for max_team in range(k, min(int(k * 2.5), 16)):
         current_team = []
