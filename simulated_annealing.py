@@ -77,6 +77,8 @@ class Bucket_Structure():
 
         self.G.nodes[move[0]]['team'] = move[1]
 
+        G = self.G
+
         C_w, C_k, C_b = score(self.G, separated=True)
 
         output = [self.G.nodes[v]['team'] for v in range(self.G.number_of_nodes())]
@@ -117,14 +119,13 @@ class Bucket_Structure():
                 ##FOR TESTING
 
 
-                C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in self.G.edges(v, data='weight') if i == v)
-
+                C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in G.edges(v, data='weight') if i == v)
+                
                 if not C_team_size[output[v] - 1][team]:
                     inside_sqrt = b_norm ** 2 - b[output[v] - 1] ** 2 - b[team] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team] + 1 / n) ** 2
                     # if inside_sqrt < 0:
-                        # inside_sqrt = 0
+                    #     inside_sqrt = 0
                     C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt(inside_sqrt)) - C_b
-
                 gain = round(C_w_partial + C_team_size[output[v] - 1][team], 10)
 
                 ##FOR TESTING
