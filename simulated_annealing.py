@@ -81,17 +81,17 @@ class Bucket_Structure():
 
         C_w, C_k, C_b = score(self.G, separated=True)
 
-        output = [self.G.nodes[v]['team'] for v in range(self.G.number_of_nodes())]
+        output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
         teams, counts = np.unique(output, return_counts=True)
 
-        b = (counts / self.G.number_of_nodes()) - 1 / self.k
+        b = (counts / G.number_of_nodes()) - 1 / self.k
         b_norm = np.linalg.norm(b, 2)
-        n = len(self.G.nodes)
+        n = len(G.nodes)
 
         C_team_size = [[None for _ in range(self.k)] for _ in range(self.k)]
 
         change_nodes = [move[0]]
-        for i, j, d in self.G.edges(move[0], data='weight'):
+        for i, j, d in G.edges(move[0], data='weight'):
             if i == move[0] and d > 0:
                 change_nodes.append(j)
 
@@ -168,6 +168,7 @@ def simulated_annealing(file, overwrite=True):
 
             G.nodes[move[0]]['team'] = move[1]
 
+            #bucket = Bucket_Structure(G)
             bucket.update(move)
 
     #
