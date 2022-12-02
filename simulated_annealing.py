@@ -54,9 +54,11 @@ class Bucket_Structure():
                 C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in G.edges(v, data='weight') if i == v)
                 
                 if not C_team_size[output[v] - 1][team]:
-                    C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt((b_norm ** 2) - (b[output[v] - 1] ** 2) - (b[team] ** 2) + ((b[output[v] - 1] - (1 / n)) ** 2) + ((b[team] + (1 / n)) ** 2))) - C_b
-
-                gain = round(C_w_partial + C_team_size[output[v] - 1][team], 4)
+                    inside_sqrt = b_norm ** 2 - b[output[v] - 1] ** 2 - b[team] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team] + 1 / n) ** 2
+                    # if inside_sqrt < 0:
+                    #     inside_sqrt = 0
+                    C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt(inside_sqrt)) - C_b
+                gain = round(C_w_partial + C_team_size[output[v] - 1][team], 10)
 
                 ##FOR TESTING
                 # print("calculated C_w change:", C_w_partial)
@@ -118,14 +120,17 @@ class Bucket_Structure():
                 C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in self.G.edges(v, data='weight') if i == v)
 
                 if not C_team_size[output[v] - 1][team]:
-                    C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt(b_norm ** 2 - b[output[v] - 1] ** 2 - b[team] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team] + 1 / n) ** 2)) - C_b
+                    inside_sqrt = b_norm ** 2 - b[output[v] - 1] ** 2 - b[team] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team] + 1 / n) ** 2
+                    # if inside_sqrt < 0:
+                        # inside_sqrt = 0
+                    C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt(inside_sqrt)) - C_b
 
-                gain = round(C_w_partial + C_team_size[output[v] - 1][team], 4)
+                gain = round(C_w_partial + C_team_size[output[v] - 1][team], 10)
 
                 ##FOR TESTING
-                # print("calculated C_w change:", C_w_partial)
-                # print("calculated C_b change:", C_team_size[output[v] - 1][team])
-                # print("calculated Overall change:", gain)
+                #print("calculated C_w change:", C_w_partial)
+                #print("calculated C_b change:", C_team_size[output[v] - 1][team])
+                #print("calculated Overall change:", gain)
                 ##FOR TESTING
 
                 if gain in self.buckets[team]:
@@ -152,8 +157,10 @@ def simulated_annealing(file, overwrite=True):
     #
 
     # Implement efficient simulated annealing algorithm
-    bucket = Bucket_Structure(G)
-    for _ in range(100):
+    bucket = Bucket_Structure(G.copy())
+
+    for _ in range(300):
+
         move, gain = O1_operator(bucket)
 
         if gain < 0:
