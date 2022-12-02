@@ -223,6 +223,12 @@ def the_number_one_algorithm(file, overwrite=True):
                 #bucket = Bucket_Structure(G)
                 bucket.update(move)
 
+            else:
+
+                moves, gain = O2_operator(G_copy)
+
+
+
         #
 
         final_scores[K] = [score(G_copy), G_copy]
@@ -232,12 +238,11 @@ def the_number_one_algorithm(file, overwrite=True):
     best_k = min(final_scores, key=lambda x: final_scores[x][0])
 
     best_score = final_scores[best_k][0]
-    best_G = final_scores[best_k]
-
+    best_G = final_scores[best_k][1]
 
     # Write the new file if it is better than the initial score
-    if overwrite and initial_score > best_score:
-        write_output(best_G, out_file, overwrite=True)
+    #if overwrite and initial_score > best_score:
+    #    write_output(best_G, out_file, overwrite=True)
     #
 
     end_t = time.perf_counter()
@@ -265,6 +270,41 @@ def O2_operator(G: nx.Graph):
     Returns the move and the induced move gain.
     """
     # TODO
+    # Maybe: Run each move and then for each move run o1
+    
+    potential_sequences = {}
+
+    output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
+    teams, counts = np.unique(output, return_counts=True)
+    k = np.max(teams)
+    moves = []
+    for i in (G.nodes):
+        for j in range(1, k + 1):
+            if output[i] != j:
+                moves.append([i, j])
+
+
+    for move in moves:
+        G_copy = G.copy()
+        score1 = score(G_copy)
+        G_copy.nodes[move[0]]['team'] = move[1]
+        score2 = score(G_copy)
+        gain1 = score2 - score1
+
+        current_bucket = Bucket_Structure(G_copy)
+        next_move, gain2 = O1_operator(current_bucket)
+
+        total_gain = gain1 + gain2
+        if total_gain in potential_sequences.keys:
+            potential_sequences[total_gain].append([move, next_move])
+        else:
+            potential_sequences[total_gain] = [[move, next_move]]
+
+    min_gain = min(potential_sequences.keys)
+
+    return random.choice(potential_sequences[min_gain]), min_gain
+
+
 
     # This seems hard to implement efficiently, but the paper gives some good advice on how we can do this.
     # (if we can't figure out a better way) we could have a fixed number of moves to search and pick the best of those moves
