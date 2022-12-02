@@ -4,6 +4,7 @@ from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 from starter import *
+from k_cut_algorithm import *
 
 def helper(output_1, output_2, team):
     """
@@ -184,6 +185,64 @@ def simulated_annealing(file, overwrite=True):
 
     return in_file, initial_score - current_score, end_t - start_t
 
+def the_number_one_algorithm(file, overwrite=True):
+
+    start_t = time.perf_counter()
+
+    # Read in the file, and record the initial score
+    in_file = str(Path(in_dir) / file)
+    out_file = str(Path(out_dir) / f"{file[:-len('.in')]}.out")
+
+    initial_score = score(read_output(read_input(in_file), out_file))
+
+    G = read_output(read_input(in_file), out_file)
+    #
+
+    # Implement efficient simulated annealing algorithm
+    bucket = Bucket_Structure(G.copy())
+
+    current_k = bucket.k
+
+    final_scores = {}
+    
+    for K in [current_k - l for l in [1, 0, -1] if current_k - l >= 2]:
+        G_copy = G.copy()
+        max_k_cut_solve(K)(G_copy)
+        bucket = Bucket_Structure(G_copy)
+
+        
+
+        for _ in range(200):
+
+            move, gain = O1_operator(bucket)
+
+            if gain < 0:
+
+                G_copy.nodes[move[0]]['team'] = move[1]
+
+                #bucket = Bucket_Structure(G)
+                bucket.update(move)
+
+        #
+
+        final_scores[K] = [score(G_copy), G_copy]
+
+    #print(final_scores)
+    
+    best_k = min(final_scores, key=lambda x: final_scores[x][0])
+
+    best_score = final_scores[best_k][0]
+    best_G = final_scores[best_k]
+
+
+    # Write the new file if it is better than the initial score
+    if overwrite and initial_score > best_score:
+        write_output(best_G, out_file, overwrite=True)
+    #
+
+    end_t = time.perf_counter()
+
+    return in_file, initial_score - best_score, end_t - start_t
 
 
 # These operators are based off of the following:
@@ -317,7 +376,7 @@ if __name__ == '__main__':
     filenames = [x for x in os.listdir(in_dir) if x.endswith('.in')]
 
     with Pool() as pool:
-        results = pool.imap_unordered(simulated_annealing, filenames)
+        results = pool.imap_unordered(the_number_one_algorithm, filenames)
 
         for filename, improvement, duration in results:
             print(f"{filename}: improved by {improvement:.2f} in {duration:.2f}s")
