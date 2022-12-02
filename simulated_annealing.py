@@ -22,7 +22,6 @@ class Bucket_Structure():
         self.G = G
 
         C_w, C_k, C_b = score(G, separated=True)
-        current_score = score(G)
 
         output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
         teams, counts = np.unique(output, return_counts=True)
@@ -43,43 +42,40 @@ class Bucket_Structure():
                     continue
 
                 ##FOR TESTING
-                #G_copy = G.copy()
-                #G_copy.nodes[v]['team'] = team + 1
-                #new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
+                # G_copy = G.copy()
+                # G_copy.nodes[v]['team'] = team + 1
+                # new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
 
-                #print("C_w change:", new_C_w - C_w)
-                #print("C_b change:", new_C_b - C_b)
-                #print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
+                # print("C_w change:", new_C_w - C_w)
+                # print("C_b change:", new_C_b - C_b)
+                # print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
                 ##FOR TESTING
 
-                C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in G.edges(v, data='weight') if i == v) # i should always equal v anyway
+                C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in G.edges(v, data='weight') if i == v)
                 
-                if not C_team_size[output[v] - 1][team]: # if we haven't yet calculated the change from moving something in team a to team b, use the formula from HW 11
+                if not C_team_size[output[v] - 1][team]:
                     C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt((b_norm ** 2) - (b[output[v] - 1] ** 2) - (b[team] ** 2) + ((b[output[v] - 1] - (1 / n)) ** 2) + ((b[team] + (1 / n)) ** 2))) - C_b
 
                 gain = round(C_w_partial + C_team_size[output[v] - 1][team], 4)
 
                 ##FOR TESTING
-                #print("calculated C_w change:", C_w_partial)
-                #print("calculated C_b change:", C_team_size[output[v] - 1][team])
-                #print("calculated Overall change:", gain)
+                # print("calculated C_w change:", C_w_partial)
+                # print("calculated C_b change:", C_team_size[output[v] - 1][team])
+                # print("calculated Overall change:", gain)
                 ##FOR TESTING
-
 
                 if gain in self.buckets[team]:
                     self.buckets[team][gain].append(v)
                 else:
                     self.buckets[team][gain] = [v]
 
-                self.vertices_key[v][team] = gain # are vertices zero-indexed?
-                    # n dictionaries where each dictionary has k keys (1, k), the values of the dict the gains
+                self.vertices_key[v][team] = gain
 
-    def update(self, move): # FIX THIS TODO
+    def update(self, move):
 
-        self.G.nodes[move[0]]['team'] = move[1] # make the move on self.G
+        self.G.nodes[move[0]]['team'] = move[1]
 
         C_w, C_k, C_b = score(self.G, separated=True)
-        current_score = score(self.G)
 
         output = [self.G.nodes[v]['team'] for v in range(self.G.number_of_nodes())]
         teams, counts = np.unique(output, return_counts=True)
@@ -90,19 +86,15 @@ class Bucket_Structure():
 
         C_team_size = [[None for _ in range(self.k)] for _ in range(self.k)]
 
-        # create a list of nodes that need to be changed
-        # this list consists of the node that was moved, and the nodes that it was connected to
-
         change_nodes = [move[0]]
         for i, j, d in self.G.edges(move[0], data='weight'):
             if i == move[0] and d > 0:
                 change_nodes.append(j)
 
-        # figure out which stuff needs to get deleted.
         for v in change_nodes:
             for team in self.vertices_key[v]:
                 self.buckets[team][self.vertices_key[v][team]].remove(v)
-                if not self.buckets[team][self.vertices_key[v][team]]: # if it becomes empty by doing this
+                if not self.buckets[team][self.vertices_key[v][team]]:
                     self.buckets[team].pop(self.vertices_key[v][team])
             self.vertices_key[v].clear()
 
@@ -112,29 +104,28 @@ class Bucket_Structure():
                 if self.G.nodes[v]['team'] == team + 1:
                     continue
 
-
                 ##FOR TESTING
-                #G_copy = self.G.copy()
-                #G_copy.nodes[v]['team'] = team + 1
-                #new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
+                # G_copy = self.G.copy()
+                # G_copy.nodes[v]['team'] = team + 1
+                # new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
 
-                #print("C_w change:", new_C_w - C_w)
-                #print("C_b change:", new_C_b - C_b)
-                #print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
+                # print("C_w change:", new_C_w - C_w)
+                # print("C_b change:", new_C_b - C_b)
+                # print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
                 ##FOR TESTING
 
-                # calculate move gain of moving v to team (use HW11)
-                C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in self.G.edges(v, data='weight') if i == v) # i should always equal v anyway
 
-                if not C_team_size[output[v] - 1][team]: # if we haven't yet calculated the change from moving something in team a to team b, use the formula from HW 11
+                C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in self.G.edges(v, data='weight') if i == v)
+
+                if not C_team_size[output[v] - 1][team]:
                     C_team_size[output[v] - 1][team] = math.exp(B_EXP * np.sqrt(b_norm ** 2 - b[output[v] - 1] ** 2 - b[team] ** 2 + (b[output[v] - 1] - 1 / n) ** 2 + (b[team] + 1 / n) ** 2)) - C_b
 
                 gain = round(C_w_partial + C_team_size[output[v] - 1][team], 4)
 
                 ##FOR TESTING
-                #print("calculated C_w change:", C_w_partial)
-                #print("calculated C_b change:", C_team_size[output[v] - 1][team])
-                #print("calculated Overall change:", gain)
+                # print("calculated C_w change:", C_w_partial)
+                # print("calculated C_b change:", C_team_size[output[v] - 1][team])
+                # print("calculated Overall change:", gain)
                 ##FOR TESTING
 
                 if gain in self.buckets[team]:
@@ -142,8 +133,7 @@ class Bucket_Structure():
                 else:
                     self.buckets[team][gain] = [v]
 
-                self.vertices_key[v][team] = gain # are vertices zero-indexed?
-                    # n dictionaries where each dictionary has k keys (1, k), the values of the dict the gains
+                self.vertices_key[v][team] = gain
 
 in_dir = "inputs"
 out_dir = "outputs"
@@ -162,36 +152,28 @@ def simulated_annealing(file, overwrite=True):
     #
 
     # Implement efficient simulated annealing algorithm
-    change = list(G.nodes)
-    for _ in range(30):
-        output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
-        teams, counts = np.unique(output, return_counts=True)
-        k = np.max(teams)
-        C = {}
-        for i in G.nodes:
-            C[i] = sum(d for u, v, d in G.edges(data='weight') if output[u] == output[v] and u == i)
+    bucket = Bucket_Structure(G)
+    for _ in range(100):
+        move, gain = O1_operator(bucket)
 
-        most_impact = max(change, key=lambda x: C[x])
+        if gain < 0:
 
-        G.nodes[most_impact]['team'] = random.randint(1, k)
+            G.nodes[move[0]]['team'] = move[1]
 
-        current_score = score(G)
+            bucket.update(move)
 
-        if best_score > current_score:
-            best_score = current_score
-        else:
-            change.remove(most_impact)
-            G.nodes[most_impact]['team'] = output[most_impact]
     #
 
+    current_score = score(G)
+
     # Write the new file if it is better than the initial score
-    if overwrite and initial_score > best_score:
+    if overwrite and initial_score > current_score:
         write_output(G, out_file, overwrite=True)
     #
 
     end_t = time.perf_counter()
 
-    return in_file, initial_score - best_score, end_t - start_t
+    return in_file, initial_score - current_score, end_t - start_t
 
 
 
