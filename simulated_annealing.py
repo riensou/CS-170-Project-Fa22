@@ -1,5 +1,6 @@
 import random
 import time
+import copy
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -43,13 +44,13 @@ class Bucket_Structure():
                     continue
 
                 ##FOR TESTING
-                # G_copy = G.copy()
-                # G_copy.nodes[v]['team'] = team + 1
-                # new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
+                #G_copy = G.copy()
+                #G_copy.nodes[v]['team'] = team + 1
+                #new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
 
-                # print("C_w change:", new_C_w - C_w)
-                # print("C_b change:", new_C_b - C_b)
-                # print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
+                #print("C_w change:", new_C_w - C_w)
+                #print("C_b change:", new_C_b - C_b)
+                #print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
                 ##FOR TESTING
 
                 C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in G.edges(v, data='weight') if i == v)
@@ -62,9 +63,9 @@ class Bucket_Structure():
                 gain = round(C_w_partial + C_team_size[output[v] - 1][team], 10)
 
                 ##FOR TESTING
-                # print("calculated C_w change:", C_w_partial)
-                # print("calculated C_b change:", C_team_size[output[v] - 1][team])
-                # print("calculated Overall change:", gain)
+                #print("calculated C_w change:", C_w_partial)
+                #print("calculated C_b change:", C_team_size[output[v] - 1][team])
+                #print("calculated Overall change:", gain)
                 ##FOR TESTING
 
                 if gain in self.buckets[team]:
@@ -110,13 +111,13 @@ class Bucket_Structure():
                     continue
 
                 ##FOR TESTING
-                # G_copy = self.G.copy()
-                # G_copy.nodes[v]['team'] = team + 1
-                # new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
+                #G_copy = self.G.copy()
+                #G_copy.nodes[v]['team'] = team + 1
+                #new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
 
-                # print("C_w change:", new_C_w - C_w)
-                # print("C_b change:", new_C_b - C_b)
-                # print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
+                #print("C_w change:", new_C_w - C_w)
+                #print("C_b change:", new_C_b - C_b)
+                #print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
                 ##FOR TESTING
 
 
@@ -212,7 +213,7 @@ def the_number_one_algorithm(file, overwrite=True):
 
         
 
-        for _ in range(200):
+        for _ in range(10):
 
             move, gain = O1_operator(bucket)
 
@@ -226,6 +227,16 @@ def the_number_one_algorithm(file, overwrite=True):
             else:
 
                 moves, gain = O2_operator(G_copy)
+
+                if gain < 0:
+
+                    for move in moves:
+                        G_copy.nodes[move[0]]['team'] = move[1]
+
+                        bucket.update(move)
+
+
+
 
 
 
@@ -269,8 +280,6 @@ def O2_operator(G: nx.Graph):
     Selects the double-transfer move operation such that the induced move gain is maximum.
     Returns the move and the induced move gain.
     """
-    # TODO
-    # Maybe: Run each move and then for each move run o1
     
     potential_sequences = {}
 
@@ -282,25 +291,79 @@ def O2_operator(G: nx.Graph):
         for j in range(1, k + 1):
             if output[i] != j:
                 moves.append([i, j])
+    
+    bucket = Bucket_Structure(G)
+    C_w_1, C_k_1, C_b_1 = score(G, separated=True)
+
+    b = (counts / G.number_of_nodes()) - 1 / k
+    b_norm = np.linalg.norm(b, 2)
+    n = G.number_of_nodes()
+
+    for move in tqdm(moves):
+        current_output = output.copy()
+        current_bucket = copy.deepcopy(bucket)
+
+        C_w_partial = sum(d * helper(current_output[i], current_output[j], move[1]) for i, j, d in current_bucket.G.edges(move[0], data='weight') if i == move[0])
+                
+        inside_sqrt = (b_norm ** 2) - (b[current_output[move[0]] - 1] ** 2) - (b[move[1] - 1] ** 2) + ((b[current_output[move[0]] - 1] - 1 / n) ** 2) + ((b[move[1] - 1] + 1 / n) ** 2)
+        C_b_change = math.exp(B_EXP * np.sqrt(inside_sqrt)) - C_b_1
+        gain1 = round(C_w_partial + C_b_change, 10)
+
+        ##FOR TESTING
+        #print("calculated gain1", gain1)
+        #print("calculated C_w_change:", C_w_partial)
+        #print("calculated C_b_change:", C_b_change)
+        ##FOR TESTING
 
 
-    for move in moves:
-        G_copy = G.copy()
-        score1 = score(G_copy)
-        G_copy.nodes[move[0]]['team'] = move[1]
-        score2 = score(G_copy)
-        gain1 = score2 - score1
+        current_bucket.update(move)
 
-        current_bucket = Bucket_Structure(G_copy)
+        ##FOR TESTING
+        #C_w_2, C_k_2, C_b_2 = score(current_bucket.G, separated=True)
+        #print("true gain1:", score(current_bucket.G) - (C_w_1 + C_k_1 + C_b_1))
+        #print("true C_w_change:", C_w_2 - C_w_1)
+        #print("true C_b_change:", C_b_2 - C_b_1)
+        ##FOR TESTING
+
         next_move, gain2 = O1_operator(current_bucket)
 
-        total_gain = gain1 + gain2
-        if total_gain in potential_sequences.keys:
+        total_gain = round(gain1 + gain2, 10)
+
+        ##FOR TESTING
+        calculated_total_gain = total_gain
+        G_copy = G.copy()
+        cur_score = score(G_copy)
+        G_copy.nodes[move[0]]['team'] = move[1]
+        true_gain1 = score(G_copy) - cur_score
+        cur_score = score(G_copy)
+        G_copy.nodes[next_move[0]]['team'] = next_move[1]
+        true_gain2 = score(G_copy) - cur_score
+        true_total_gain = score(G_copy) - (C_w_1 + C_k_1 + C_b_1)
+
+        if round(calculated_total_gain, 2) != round(true_total_gain, 2):
+            print("ERROR:\n")
+            print("true:", true_total_gain)
+            print("calculated:", calculated_total_gain)
+            print("")
+            print("CALCULATED:", "gain1:", gain1, "gain2:", gain2)
+            print("TRUE:", "gain1:", true_gain1, "gain2:", true_gain2)
+        ##FOR TESTING
+
+        # gain2 is somehow being wrong ...
+
+
+
+        if total_gain in list(potential_sequences.keys()):
             potential_sequences[total_gain].append([move, next_move])
         else:
             potential_sequences[total_gain] = [[move, next_move]]
 
-    min_gain = min(potential_sequences.keys)
+    
+
+    min_gain = min(potential_sequences.keys())
+
+    print(min_gain)
+    print(random.choice(potential_sequences[min_gain]))
 
     return random.choice(potential_sequences[min_gain]), min_gain
 
