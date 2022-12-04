@@ -39,7 +39,7 @@ class Bucket_Structure():
 
         C_team_size = [[None for _ in range(self.k)] for _ in range(self.k)]
         for v in G.nodes:
-            for team in range(self.k):
+            for team in range(int(np.shape(b)[0])):
                 if G.nodes[v]['team'] == team + 1:
                     continue
 
@@ -500,127 +500,137 @@ def O5_operator(bucket):
 
 def MOH_algorithm(file, overwrite=True):
 
-    start_t = time.perf_counter()
+    try:
 
-    # Read in the file, and record the initial score
-    in_file = str(Path(in_dir) / file)
-    out_file = str(Path(out_dir) / f"{file[:-len('.in')]}.out")
+        start_t = time.perf_counter()
 
-    I = read_output(read_input(in_file), out_file)
-    initial_score = score(I)
-    #
+        # Read in the file, and record the initial score
+        in_file = str(Path(in_dir) / file)
+        out_file = str(Path(out_dir) / f"{file[:-len('.in')]}.out")
 
-    OMEGA = 100
-    RHO = 0.8
-    XI = 30
-    GAMMA = int(I.number_of_nodes() / 10)
-    ALPHA = 0.05
+        I = read_output(read_input(in_file), out_file)
+        initial_score = score(I)
+        #
 
-    ### MOH algorithm ###
+        OMEGA = 20
+        RHO = 1
+        XI = 10
+        GAMMA = 20
+        ALPHA = 0
 
-    bucket = Bucket_Structure(I)
+        ### MOH algorithm ###
 
-    I_best = I.copy() 
-    local_optimum_score = initial_score
-    best_score = initial_score
-    c_non_impv = 0
-    iter = 0
-
-    # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
-    for _ in tqdm(range(100)):
-        
-        ## Descent-based improvement phase (O1 and O2) ##
-        moveO1, gainO1 = O1_operator(bucket)
-        gainO2 = 0
-        # print("RUNNING FIRST O2")
-        # movesO2, gainO2 = O2_operator(bucket)
-        while gainO1 < 0 or gainO2 < 0:
-            while gainO1 < 0:
-                I.nodes[moveO1[0]]['team'] = moveO1[1]
-                bucket.update(moveO1)
-                moveO1, gainO1 = O1_operator(bucket)
-                iter += 1
-
-            if random.uniform(0, 1) < ALPHA:
-                movesO2, gainO2 = O2_operator(bucket)
-                if gainO2 > 0:
-                    for move in movesO2:
-                        I.nodes[move[0]]['team'] = move[1]
-                        bucket.update(move)
-
-            # while gainO2 < 0:
-            #     for move in movesO2:
-            #         I.nodes[move[0]]['team'] = move[1]
-            #         bucket.update(move)
-            #     print("RUNNING O2")
-            #     movesO2, gainO2 = O2_operator(bucket)
-            #     iter += 1
-            # print("RUNNING O1")
-            # moveO1, gainO1 = O1_operator(bucket)
-        ## Out of phase 1 (O1 and O2)
-
-        current_score = score(I)
-        local_optimum_score = current_score
-        if current_score < best_score:
-            best_score = current_score
-            I_best = I.copy()
-            c_non_impv = 0
-        else:
-            c_non_impv += 1
-
-        ## Diversified improvement phase (O3 and O4) ##
-        c_div = 0
+        bucket = Bucket_Structure(I)
         H = []
 
-        while c_div <= OMEGA and current_score >= local_optimum_score:
-            LAMBDA = random.randint(3, int(I.number_of_nodes() / 10))
+        I_best = I.copy() 
+        local_optimum_score = initial_score
+        best_score = initial_score
+        c_non_impv = 0
+        iter = 0
 
-            gain = 0
+        # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
+        for _ in range(5):
+            
+            #print(in_file, best_score - initial_score, _ + 1, time.perf_counter() - start_t)
+            
+            ## Descent-based improvement phase (O1 and O2) ##
+            moveO1, gainO1 = O1_operator(bucket)
+            gainO2 = 0
+            # print("RUNNING FIRST O2")
+            # movesO2, gainO2 = O2_operator(bucket)
+            while gainO1 < 0 or gainO2 < 0:
+                while gainO1 < 0:
+                    I.nodes[moveO1[0]]['team'] = moveO1[1]
+                    bucket.update(moveO1)
+                    moveO1, gainO1 = O1_operator(bucket)
+                    iter += 1
 
-            if random.uniform(0, 1) < RHO:
-                for tabu in H:
-                    if tabu[2] <= iter:
-                        H.remove(tabu)
-                move, gain = O3_operator(bucket, [m[0:2] for m in H])
-                if not move: # if O3 fails
-                    continue
-                H.append([move[0], I.nodes[move[0]]['team'], iter + LAMBDA])
-                bucket.update(move)
+                if random.uniform(0, 1) < ALPHA:
+                    movesO2, gainO2 = O2_operator(bucket)
+                    if gainO2 > 0:
+                        for move in movesO2:
+                            I.nodes[move[0]]['team'] = move[1]
+                            bucket.update(move)
+
+                # while gainO2 < 0:
+                #     for move in movesO2:
+                #         I.nodes[move[0]]['team'] = move[1]
+                #         bucket.update(move)
+                #     print("RUNNING O2")
+                #     movesO2, gainO2 = O2_operator(bucket)
+                #     iter += 1
+                # print("RUNNING O1")
+                # moveO1, gainO1 = O1_operator(bucket)
+            ## Out of phase 1 (O1 and O2)
+
+            current_score = score(I)
+            local_optimum_score = current_score
+            if current_score < best_score:
+                best_score = current_score
+                I_best = I.copy()
+                c_non_impv = 0
             else:
-                moves, gain = O4_operator(bucket)
-                for move in moves:
+                c_non_impv += 1
+
+            ## Diversified improvement phase (O3 and O4) ##
+            c_div = 0
+
+            while c_div <= OMEGA and current_score >= local_optimum_score:
+                LAMBDA = random.randint(3, int(I.number_of_nodes() / 10))
+
+                gain = 0
+
+                if random.uniform(0, 1) < RHO:
+                    for tabu in H:
+                        if tabu[2] <= iter:
+                            H.remove(tabu)
+                    move, gain = O3_operator(bucket, [m[0:2] for m in H])
+                    if not move: # if O3 fails
+                        continue
+                    H.append([move[0], I.nodes[move[0]]['team'], iter + LAMBDA])
+                    bucket.update(move)
+                else:
+                    moves, gain = O4_operator(bucket)
+                    for move in moves:
+                        I.nodes[move[0]]['team'] = move[1]
+                        bucket.update(move)
+                iter += 1
+                c_div += 1
+
+                current_score += gain
+            ##
+
+            ## Perturbation phase (O5) ##
+            if c_non_impv > XI:
+                for _ in range(GAMMA):
+                    move = O5_operator(bucket)
                     I.nodes[move[0]]['team'] = move[1]
                     bucket.update(move)
-            iter += 1
-            c_div += 1
+                c_non_impv = 0
+            ##
 
-            current_score += gain
-        ##
+        ###
+        
+        # Write the new file if it is better than the initial score
+        if overwrite and initial_score > best_score:
+            write_output(I_best, out_file, overwrite=True)
+        #
 
-        ## Perturbation phase (O5) ##
-        if c_non_impv > XI:
-            for _ in range(GAMMA):
-                move = O5_operator(bucket)
-                I.nodes[move[0]]['team'] = move[1]
-                bucket.update(move)
-            c_non_impv = 0
-        ##
+        end_t = time.perf_counter()
 
-    ###
-    
-    # Write the new file if it is better than the initial score
-    if overwrite and initial_score > best_score:
-        write_output(I_best, out_file, overwrite=True)
-    #
+        return in_file, best_score - initial_score, end_t - start_t
 
-    end_t = time.perf_counter()
+    except:
 
-    return in_file, best_score - initial_score, end_t - start_t
+        return "error", 0, 0
 
 
 if __name__ == '__main__':
 
+
     filenames = [x for x in os.listdir(in_dir) if x.endswith('.in')]
+    random.shuffle(filenames)
 
     with Pool() as pool:
         results = pool.imap_unordered(MOH_algorithm, filenames)
