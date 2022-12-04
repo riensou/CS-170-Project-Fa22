@@ -44,13 +44,15 @@ class Bucket_Structure():
                     continue
 
                 ##FOR TESTING
-                #G_copy = G.copy()
-                #G_copy.nodes[v]['team'] = team + 1
-                #new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
+                # G_copy = G.copy()
+                # G_copy.nodes[v]['team'] = team + 1
+                # new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
 
-                #print("C_w change:", new_C_w - C_w)
-                #print("C_b change:", new_C_b - C_b)
-                #print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
+                # print("move:", [v, team + 1])
+
+                # #print("C_w change:", new_C_w - C_w)
+                # #print("C_b change:", new_C_b - C_b)
+                # print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
                 ##FOR TESTING
 
                 C_w_partial = sum(d * helper(output[i], output[j], team + 1) for i, j, d in G.edges(v, data='weight') if i == v)
@@ -65,7 +67,7 @@ class Bucket_Structure():
                 ##FOR TESTING
                 #print("calculated C_w change:", C_w_partial)
                 #print("calculated C_b change:", C_team_size[output[v] - 1][team])
-                #print("calculated Overall change:", gain)
+                # print("calculated Overall change:", gain)
                 ##FOR TESTING
 
                 if gain in self.buckets[team]:
@@ -92,12 +94,16 @@ class Bucket_Structure():
 
         C_team_size = [[None for _ in range(self.k)] for _ in range(self.k)]
 
-        change_nodes = [move[0]]
-        for i, j, d in G.edges(move[0], data='weight'):
-            if i == move[0] and d > 0:
-                change_nodes.append(j)
+        # This is to change C_w, but doesn't account for C_b
+        # change_nodes = [move[0]]
+        # for i, j, d in G.edges(move[0], data='weight'):
+        #     assert i == move[0]
+        #     if i == move[0] and d > 0:
+        #         change_nodes.append(j)
+        # print("\nCHANGE NODES:", change_nodes)
+        # print("G.edges(..)", G.edges(move[0], data='weight'), "\n")
 
-        for v in change_nodes:
+        for v in G.nodes: #
             for team in self.vertices_key[v]:
                 self.buckets[team][self.vertices_key[v][team]].remove(v)
                 if not self.buckets[team][self.vertices_key[v][team]]:
@@ -105,7 +111,7 @@ class Bucket_Structure():
             self.vertices_key[v].clear()
 
 
-        for v in change_nodes:
+        for v in G.nodes: #
             for team in range(self.k):
                 if self.G.nodes[v]['team'] == team + 1:
                     continue
@@ -114,7 +120,7 @@ class Bucket_Structure():
                 #G_copy = self.G.copy()
                 #G_copy.nodes[v]['team'] = team + 1
                 #new_C_w, new_C_k, new_C_b = score(G_copy, separated=True)
-
+                #print("move:", [v, team + 1])
                 #print("C_w change:", new_C_w - C_w)
                 #print("C_b change:", new_C_b - C_b)
                 #print("Overall change:", (new_C_w - C_w) + (new_C_b - C_b))
@@ -272,14 +278,20 @@ def O1_operator(bucket):
 
     best_bucket = min([[b, min(bucket.buckets[b])] for b in range(bucket.k)], key=lambda x: x[1])
 
-    return [random.choice(bucket.buckets[best_bucket[0]][best_bucket[1]]), best_bucket[0] + 1], min(bucket.buckets[best_bucket[0]])
+    move = [random.choice(bucket.buckets[best_bucket[0]][best_bucket[1]]), best_bucket[0] + 1]
+
+    gain = best_bucket[1]
+
+    return move, gain
 
 
-def O2_operator(G: nx.Graph):
+def O2_operator(bucket):
     """
     Selects the double-transfer move operation such that the induced move gain is maximum.
     Returns the move and the induced move gain.
     """
+
+    G = bucket.G
     
     potential_sequences = {}
 
@@ -292,7 +304,6 @@ def O2_operator(G: nx.Graph):
             if output[i] != j:
                 moves.append([i, j])
     
-    bucket = Bucket_Structure(G)
     C_w_1, C_k_1, C_b_1 = score(G, separated=True)
 
     b = (counts / G.number_of_nodes()) - 1 / k
@@ -330,23 +341,23 @@ def O2_operator(G: nx.Graph):
         total_gain = round(gain1 + gain2, 10)
 
         ##FOR TESTING
-        calculated_total_gain = total_gain
-        G_copy = G.copy()
-        cur_score = score(G_copy)
-        G_copy.nodes[move[0]]['team'] = move[1]
-        true_gain1 = score(G_copy) - cur_score
-        cur_score = score(G_copy)
-        G_copy.nodes[next_move[0]]['team'] = next_move[1]
-        true_gain2 = score(G_copy) - cur_score
-        true_total_gain = score(G_copy) - (C_w_1 + C_k_1 + C_b_1)
+        # calculated_total_gain = total_gain
+        # G_copy = G.copy()
+        # cur_score = score(G_copy)
+        # G_copy.nodes[move[0]]['team'] = move[1]
+        # true_gain1 = score(G_copy) - cur_score
+        # cur_score = score(G_copy)
+        # G_copy.nodes[next_move[0]]['team'] = next_move[1]
+        # true_gain2 = score(G_copy) - cur_score
+        # true_total_gain = score(G_copy) - (C_w_1 + C_k_1 + C_b_1)
 
-        if round(calculated_total_gain, 2) != round(true_total_gain, 2):
-            print("ERROR:\n")
-            print("true:", true_total_gain)
-            print("calculated:", calculated_total_gain)
-            print("")
-            print("CALCULATED:", "gain1:", gain1, "gain2:", gain2)
-            print("TRUE:", "gain1:", true_gain1, "gain2:", true_gain2)
+        # if round(calculated_total_gain, 2) != round(true_total_gain, 2):
+        #     print("ERROR:\n")
+        #     print("true:", true_total_gain)
+        #     print("calculated:", calculated_total_gain)
+        #     print("")
+        #     print("CALCULATED:", "gain1:", gain1, "gain2:", gain2)
+        #     print("TRUE:", "gain1:", true_gain1, "gain2:", true_gain2)
         ##FOR TESTING
 
         # gain2 is somehow being wrong ...
