@@ -88,6 +88,8 @@ class Bucket_Structure():
         output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
         teams, counts = np.unique(output, return_counts=True)
 
+        self.k = np.max(teams)
+
         b = (counts / G.number_of_nodes()) - 1 / self.k
         b_norm = np.linalg.norm(b, 2)
         n = len(G.nodes)
@@ -396,6 +398,12 @@ def O3_operator(bucket, H):
     best_bucket = min([[b, min(bucket.buckets[b])] for b in range(bucket.k)], key=min_key)
 
     #move = [random.choice(bucket.buckets[best_bucket[0]][best_bucket[1]]), best_bucket[0] + 1]
+    bruh = [[v, best_bucket[0] + 1] for v in bucket.buckets[best_bucket[0]][best_bucket[1]] if [v, best_bucket[0] + 1] not in H]
+    if not bruh:
+        # print("WHAT IS HAPPENING :(((((((((((((((((\n")
+        # print(bruh)
+        return None, None
+    
 
     move = random.choice([[v, best_bucket[0] + 1] for v in bucket.buckets[best_bucket[0]][best_bucket[1]] if [v, best_bucket[0] + 1] not in H])
 
@@ -485,15 +493,12 @@ def O5_operator(bucket):
     """
     G = bucket.G
 
-    v = random.sample(G.nodes, 1)
-    team = random.sample([i for i in range(1, bucket.k + 1) if i != G.nodes[v]['team']], 1)
+    v = random.sample(G.nodes, 1)[0]
+    team = random.sample([i for i in range(1, bucket.k + 1) if i != G.nodes[v]['team']], 1)[0]
 
     return [v, team]
 
 def MOH_algorithm(file, overwrite=True):
-    OMEGA = 100
-    RHO = 0.5
-    #XI = 80
 
     start_t = time.perf_counter()
 
@@ -505,6 +510,11 @@ def MOH_algorithm(file, overwrite=True):
     initial_score = score(I)
     #
 
+    OMEGA = 100
+    RHO = 0.8
+    XI = 30
+    GAMMA = int(I.number_of_nodes() / 10)
+    ALPHA = 0.05
 
     ### MOH algorithm ###
 
@@ -517,32 +527,36 @@ def MOH_algorithm(file, overwrite=True):
     iter = 0
 
     # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
-    for _ in range(5):
+    for _ in tqdm(range(100)):
         
         ## Descent-based improvement phase (O1 and O2) ##
-        # while I can be improved by O1 and O2
         moveO1, gainO1 = O1_operator(bucket)
-        movesO2, gainO2 = O2_operator(bucket)
+        gainO2 = 0
+        # print("RUNNING FIRST O2")
+        # movesO2, gainO2 = O2_operator(bucket)
         while gainO1 < 0 or gainO2 < 0:
-            # while O1 improves I
             while gainO1 < 0:
                 I.nodes[moveO1[0]]['team'] = moveO1[1]
                 bucket.update(moveO1)
                 moveO1, gainO1 = O1_operator(bucket)
-                # do O1 and update bucket data structure 
-                # iter += 1
                 iter += 1
 
-            movesO2, gainO2 = O2_operator(bucket)
-            # while O2 improves I
-            while gainO2 < 0:
-                for move in movesO2:
-                    I.nodes[move[0]]['team'] = move[1]
-                    bucket.update(move)
+            if random.uniform(0, 1) < ALPHA:
                 movesO2, gainO2 = O2_operator(bucket)
-                # do O2 and update bucket data structure
-                # iter += 1
-                iter += 1
+                if gainO2 > 0:
+                    for move in movesO2:
+                        I.nodes[move[0]]['team'] = move[1]
+                        bucket.update(move)
+
+            # while gainO2 < 0:
+            #     for move in movesO2:
+            #         I.nodes[move[0]]['team'] = move[1]
+            #         bucket.update(move)
+            #     print("RUNNING O2")
+            #     movesO2, gainO2 = O2_operator(bucket)
+            #     iter += 1
+            # print("RUNNING O1")
+            # moveO1, gainO1 = O1_operator(bucket)
         ## Out of phase 1 (O1 and O2)
 
         current_score = score(I)
@@ -555,20 +569,22 @@ def MOH_algorithm(file, overwrite=True):
             c_non_impv += 1
 
         ## Diversified improvement phase (O3 and O4) ##
-
         c_div = 0
         H = []
 
         while c_div <= OMEGA and current_score >= local_optimum_score:
             LAMBDA = random.randint(3, int(I.number_of_nodes() / 10))
 
+            gain = 0
+
             if random.uniform(0, 1) < RHO:
                 for tabu in H:
                     if tabu[2] <= iter:
                         H.remove(tabu)
                 move, gain = O3_operator(bucket, [m[0:2] for m in H])
+                if not move: # if O3 fails
+                    continue
                 H.append([move[0], I.nodes[move[0]]['team'], iter + LAMBDA])
-                # apply O3 on I
                 bucket.update(move)
             else:
                 moves, gain = O4_operator(bucket)
@@ -582,9 +598,12 @@ def MOH_algorithm(file, overwrite=True):
         ##
 
         ## Perturbation phase (O5) ##
-        #if c_non_impv > XI:
-            # apply O5 (gamma times)
-            # c_non_impv
+        if c_non_impv > XI:
+            for _ in range(GAMMA):
+                move = O5_operator(bucket)
+                I.nodes[move[0]]['team'] = move[1]
+                bucket.update(move)
+            c_non_impv = 0
         ##
 
     ###
@@ -596,7 +615,7 @@ def MOH_algorithm(file, overwrite=True):
 
     end_t = time.perf_counter()
 
-    return in_file, initial_score - best_score, end_t - start_t
+    return in_file, best_score - initial_score, end_t - start_t
 
 
 if __name__ == '__main__':
