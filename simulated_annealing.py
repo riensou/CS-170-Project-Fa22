@@ -512,10 +512,10 @@ def MOH_algorithm(file, overwrite=True):
         initial_score = score(I)
         #
 
-        OMEGA = 50
-        RHO = 1
-        XI = 5
-        GAMMA = 20
+        OMEGA = 30
+        RHO = .95
+        XI = 6
+        GAMMA = int(I.number_of_nodes() / 10)
         ALPHA = 0
 
         ### MOH algorithm ###
@@ -530,9 +530,12 @@ def MOH_algorithm(file, overwrite=True):
         iter = 0
 
         # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
-        for _ in range(10):
+        for _ in range(30):
             
             #print(in_file, best_score - initial_score, _ + 1, time.perf_counter() - start_t)
+
+            if _ >= 10 and best_score - initial_score == 0:
+                break
             
             ## Descent-based improvement phase (O1 and O2) ##
             moveO1, gainO1 = O1_operator(bucket)
