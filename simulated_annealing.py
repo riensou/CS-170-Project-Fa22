@@ -17,6 +17,20 @@ def helper(output_1, output_2, team):
         return -1
     else:
         return 0
+
+def random_solve(G: nx.Graph, k):
+    """Randomly partitions G into k number of teams."""
+    max_per_team = len(G.nodes) / k
+    teams = [0 for _ in range(k)]
+    for v in G.nodes:
+        look_for_team = True
+        while look_for_team:
+            this_team = random.randint(1, k)
+            if teams[this_team - 1] < max_per_team:
+                G.nodes[v]['team'] = this_team
+                teams[this_team - 1] += 1
+                look_for_team = False
+
 class Bucket_Structure():
 
     def __init__(self, G):
@@ -312,7 +326,8 @@ def O2_operator(bucket):
     b_norm = np.linalg.norm(b, 2)
     n = G.number_of_nodes()
 
-    for move in moves:
+    sampled_moves = random.sample(moves, int(len(moves) / 32))
+    for move in sampled_moves:
         current_output = output.copy()
         current_bucket = copy.deepcopy(bucket)
 
@@ -447,7 +462,9 @@ def O4_operator(bucket):
     b_norm = np.linalg.norm(b, 2)
     n = G.number_of_nodes()
 
-    for move in moves:
+
+    sampled_moves = random.sample(moves, int(len(moves) / 16))
+    for move in sampled_moves:
         current_output = output.copy()
         current_bucket = copy.deepcopy(bucket)
 
@@ -512,35 +529,40 @@ def MOH_algorithm(file, overwrite=True):
         initial_score = score(I)
         #
 
-        OMEGA = 30
-        RHO = .95
-        XI = 6
+        OMEGA = 100
+        RHO = .5
+        XI = 10
         GAMMA = int(I.number_of_nodes() / 10)
-        ALPHA = 0
+        ALPHA = 0.1
 
         ### MOH algorithm ###
+
+        output = [I.nodes[v]['team'] for v in range(I.number_of_nodes())]
+        teams, counts = np.unique(output, return_counts=True)
+
+        k = np.max(teams)
+
+        random_solve(I, k)
+
+        initial_random_score = current_score = score(I)
 
         bucket = Bucket_Structure(I)
         H = []
 
         I_best = I.copy() 
-        local_optimum_score = initial_score
+        local_optimum_score = initial_random_score
         best_score = initial_score
         c_non_impv = 0
         iter = 0
 
         # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
-        for _ in range(30):
+        for _ in range(20):
             
-            #print(in_file, best_score - initial_score, _ + 1, time.perf_counter() - start_t)
-
-            if _ >= 10 and best_score - initial_score == 0:
-                break
+            print(in_file, current_score - initial_score, _ + 1, time.perf_counter() - start_t)
             
             ## Descent-based improvement phase (O1 and O2) ##
             moveO1, gainO1 = O1_operator(bucket)
             gainO2 = 0
-            # print("RUNNING FIRST O2")
             # movesO2, gainO2 = O2_operator(bucket)
             while gainO1 < 0 or gainO2 < 0:
                 while gainO1 < 0:
@@ -560,12 +582,10 @@ def MOH_algorithm(file, overwrite=True):
                 #     for move in movesO2:
                 #         I.nodes[move[0]]['team'] = move[1]
                 #         bucket.update(move)
-                #     print("RUNNING O2")
                 #     movesO2, gainO2 = O2_operator(bucket)
                 #     iter += 1
-                # print("RUNNING O1")
                 # moveO1, gainO1 = O1_operator(bucket)
-            ## Out of phase 1 (O1 and O2)
+            # Out of phase 1 (O1 and O2)
 
             current_score = score(I)
             local_optimum_score = current_score
