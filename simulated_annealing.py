@@ -533,7 +533,7 @@ def MOH_algorithm(file, overwrite=True):
         RHO = .9
         XI = 8
         GAMMA = int(I.number_of_nodes() / 10)
-        ALPHA = 0
+        ALPHA = 0.25
 
         ### MOH algorithm ###
 
@@ -583,7 +583,7 @@ def MOH_algorithm(file, overwrite=True):
                 #         bucket.update(move)
                 #     movesO2, gainO2 = O2_operator(bucket)
                 #     iter += 1
-                # moveO1, gainO1 = O1_operator(bucket)
+                    moveO1, gainO1 = O1_operator(bucket)
             # Out of phase 1 (O1 and O2)
 
             current_score = score(I)
