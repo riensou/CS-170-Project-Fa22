@@ -531,7 +531,7 @@ def MOH_algorithm(file, overwrite=True):
 
         OMEGA = 30
         RHO = .9
-        XI = 8
+        XI = 20
         GAMMA = int(I.number_of_nodes() / 10)
         ALPHA = 0.25
 
@@ -555,7 +555,7 @@ def MOH_algorithm(file, overwrite=True):
         iter = 0
 
         # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
-        for _ in range(10):
+        for _ in range(75):
             
             #print(in_file, current_score - initial_score, _ + 1, time.perf_counter() - start_t)
             
