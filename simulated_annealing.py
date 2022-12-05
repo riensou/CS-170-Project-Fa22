@@ -529,11 +529,11 @@ def MOH_algorithm(file, overwrite=True):
         initial_score = score(I)
         #
 
-        OMEGA = 100
-        RHO = .5
+        OMEGA = 25
+        RHO = 1
         XI = 10
         GAMMA = int(I.number_of_nodes() / 10)
-        ALPHA = 0.1
+        ALPHA = 0
 
         ### MOH algorithm ###
 
@@ -542,7 +542,7 @@ def MOH_algorithm(file, overwrite=True):
 
         k = np.max(teams)
 
-        random_solve(I, k)
+        random_solve(I, k - 2)
 
         initial_random_score = current_score = score(I)
 
@@ -556,9 +556,9 @@ def MOH_algorithm(file, overwrite=True):
         iter = 0
 
         # while not stop condition # here we can set a time limit for the algorithm to run depending on graph size or something
-        for _ in range(20):
+        for _ in range(5):
             
-            print(in_file, current_score - initial_score, _ + 1, time.perf_counter() - start_t)
+            #print(in_file, current_score - initial_score, _ + 1, time.perf_counter() - start_t)
             
             ## Descent-based improvement phase (O1 and O2) ##
             moveO1, gainO1 = O1_operator(bucket)
